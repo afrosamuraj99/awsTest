@@ -1,0 +1,60 @@
+
+---
+- name: Check and update sshd_config
+  hosts: all
+  become: true
+
+  tasks:
+
+    #checks when there is 'PasswordAuthentication no' in sshdconfig
+    #and saves return value to password_auth register
+    - name: Check current value of PasswordAuthentication
+      command: "grep -q '^PasswordAuthentication\\s*no$' /etc/ssh/sshd_config"
+      register: password_auth
+      ignore_errors: true
+
+    #checks when there is 'UsePAM no' in sshdconfig
+    #and saves return value to use_pam register
+    - name: Check current value of UsePAM
+      command: "grep -q '^UsePAM\\s*no$' /etc/ssh/sshd_config"
+      register: use_pam
+      ignore_errors: true
+
+    #checks when there is 'PermitRootLogin no' in sshdconfig
+    #and saves return value to permit_root_login register
+    - name: Check current value of PermitRootLogin
+      command: "grep -q '^PermitRootLogin\\s*no$' /etc/ssh/sshd_config"
+      register: permit_root_login
+      ignore_errors: true
+
+  #on most servers there is ChallengeResponseAuthentication called KbdInteractiveAuthentication
+  #so there are implemented both versions
+
+    #checks when there is 'KbdInteractiveAuthentication no' in sshdconfig
+    #and saves return value to challange_response_auth register
+    - name: Check current value of KbdInteractiveAuthentication
+      command: "grep -q '^KbdInteractiveAuthentication\\s*no$' /etc/ssh/sshd_config"
+      register: challange_response_auth
+      ignore_errors: true
+
+
+    - name: Notify if value of PasswordAuthentication differes
+      debug:
+        msg: "PasswordAuthentication is commented or set to yes"
+      when: not password_auth.rc == 0
+
+    - name: Notify if value of UsePAM differes
+      debug:
+        msg: "UsePAM is commented or set to yes"
+      when: not use_pam.rc == 0
+
+    - name: Notify if value of PermitRootLogin differes
+      debug:
+        msg: "PermitRootLogin is commented or set to yes"
+      when: not permit_root_login.rc == 0
+
+    - name: Notify if value of ChallengeResponseAuthentication differes
+      debug:
+        msg: "ChallengeResponseAuthentication is commented or set to yes"
+      when: not challange_response_auth.rc == 0
+
